@@ -106,7 +106,6 @@ export default () => {
 
   return (
     <div>
-      <button onClick={handleSave}>Save</button>
       <div style={{ height: '100%', width: 750, margin: '20px auto', background: '#fff' }}>
         <div id="codex-editor-root" style={{ }}>
         </div>

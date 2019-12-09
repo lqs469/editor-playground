@@ -3,7 +3,7 @@ import Editor from '@pubpub/editor';
 import inintialDocs from './initialDocs';
 
 export default ()=> {
-  const [curr, setCurr] = useState(inintialDocs.renderTestDocs.paragraph);
+  const [curr, setCurr] = useState(inintialDocs.elements.fullDoc);
 
   const Elements = () => Object.keys(inintialDocs.elements).map((item, index) => (
     <button onClick={() => setCurr(inintialDocs.elements[item])} key={index}>{item}</button>
