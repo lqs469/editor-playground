@@ -38,6 +38,7 @@ class RichEditorExample extends React.Component {
           this.onChange(newEditorState);
         }
         return;
+      default:
     }
     return getDefaultKeyBinding(e);
   }

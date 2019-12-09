@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { ContentBlock, EditorState, EntityInstance } from "draft-js";
+// import { ContentBlock, EditorState, EntityInstance } from "draft-js";
 
 /**
  * Editor block to preview and edit images.

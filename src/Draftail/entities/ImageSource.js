@@ -1,5 +1,8 @@
 import { Component } from "react";
-import { AtomicBlockUtils, EditorState } from "draft-js";
+import {
+  AtomicBlockUtils, 
+  // EditorState
+} from "draft-js";
 
 class ImageSource extends Component {
   componentDidMount() {
