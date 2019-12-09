@@ -1,8 +1,8 @@
 import React from 'react';
 import EditorJS from '@editorjs/editorjs';
 import defaultData from './data';
-import Header from '@editorjs/header';
 // import LinkTool from '@editorjs/link';
+import Header from '@editorjs/header';
 import RawTool from '@editorjs/raw';
 import SimpleImage from '@editorjs/simple-image';
 import Checklist from '@editorjs/checklist';
@@ -15,16 +15,24 @@ import Delimiter from '@editorjs/delimiter';
 import InlineCode from '@editorjs/inline-code';
 import Warning from '@editorjs/warning';
 import Table from '@editorjs/table';
+import AttachesTool from '@editorjs/attaches';
 
 export default () => {
   const data = defaultData;
 
-  new EditorJS({
+  const editor = new EditorJS({
     holderId: 'codex-editor-root',
-    placeholder: '点我写',
+    placeholder: '在此处输入',
     tools: {
-      header: Header,
       // linkTool: LinkTool,
+      header: {
+        class: Header,
+        inlineToolbar: ['link'],
+        config: {
+          placeholder: 'Header'
+        },
+        shortcut: 'CMD+SHIFT+H'
+      },
       raw: {
         class: RawTool,
         config: {
@@ -33,7 +41,7 @@ export default () => {
       },
       image: {
         class: SimpleImage,
-        // inlineToolbar: true, // 是否开启在图片插件内使用工具条（编辑图片配文）
+        inlineToolbar: ['link'],
         toolbox: {
           title: 'Image',
           icon: '<svg width="17" height="15" viewBox="0 0 336 276" xmlns="http://www.w3.org/2000/svg"><path d="M291 150V79c0-19-15-34-34-34H79c-19 0-34 15-34 34v42l67-44 81 72 56-29 42 30zm0 52l-43-30-56 30-81-67-66 39v23c0 19 15 34 34 34h178c17 0 31-13 34-29zM79 0h178c44 0 79 35 79 79v118c0 44-35 79-79 79H79c-44 0-79-35-79-79V79C0 35 35 0 79 0z"/></svg>'
@@ -47,20 +55,15 @@ export default () => {
         class: List,
         inlineToolbar: true,
       },
-      embed: {
-        class: Embed,
-        // config: {
-        //   services: {}
-        // }
-        // https://codepen.io/bali_balo/full/yJOmgv/
-      },
+      embed: Embed,
       quote: {
         class: Quote,
         inlineToolbar: true,
         config: {
-          quotePlaceholder: 'Enter a quote',
+          quotePlaceholder: '在这里输入引用',
           captionPlaceholder: 'Quote\'s author',
         },
+        shortcut: 'CMD+SHIFT+O'
       },
       Marker,
       code: {
@@ -74,17 +77,39 @@ export default () => {
         class: Table,
         inlineToolbar: true,
         config: {
-          rows: 2,
+          rows: 3,
           cols: 3,
         },
       },
+      attaches: {
+        class: AttachesTool,
+        config: {
+          endpoint: 'http://localhost:8008/uploadFile',
+          buttonText: '上传文件',
+        }
+      }
     },
     data,
+    onReady() {
+      handleSave();
+    },
+    onChange() {
+      console.log('something changed');
+    }
   });
 
+  const handleSave = () => {
+    editor.save().then((savedData) => {
+      console.log('[savedData]', savedData);
+    });
+  }
+
   return (
-    <div style={{ height: '100%' }}>
-      <div id="codex-editor-root" style={{ width: 750, margin: '0 auto', padding: '20px', background: '#fff' }}>
+    <div>
+      <button onClick={handleSave}>Save</button>
+      <div style={{ height: '100%', width: 750, margin: '20px auto', background: '#fff' }}>
+        <div id="codex-editor-root" style={{ }}>
+        </div>
       </div>
     </div>
   )

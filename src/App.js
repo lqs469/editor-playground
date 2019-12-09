@@ -1,7 +1,9 @@
 import React from 'react';
+import { Router, Link } from "@reach/router"
 import PubPub from './Pubpub/PubPub';
 import EditorJS from './EditorJS'
-import { Router, Link } from "@reach/router"
+import DraftJS from './DraftJS';
+import Draftail from './Draftail';
 
 function App() {
   const Home = () => <div>Editor Playgounrd</div>
@@ -13,11 +15,15 @@ function App() {
         <Link to="/">Home</Link> | {" "}
         <Link to="pubpub">PubPub-Editor</Link> | {" "}
         <Link to="editor">Editor.js</Link> | {" "}
+        <Link to="draft">Draft.js</Link> | {" "}
+        <Link to="draftail">Draftail</Link> | {" "}
       </header>
       <Router>
         <Home path="/" />
         <Pubpub path="pubpub" />
         <EditorJS path="editor" />
+        <DraftJS path="draft" />
+        <Draftail path='draftail' />
       </Router>
     </div>
   );
