@@ -27,6 +27,7 @@ import React from 'react';
 
 export default () => (
   <div style={{ height: "100%" }}>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></link>
     <strong>这个库还在开发中，不建议使用，但插件可以参考</strong>
     <iframe title="czi" src="https://cdn.summitlearning.org/assets/czi_prosemirror_0_0_1_b_index.html" width="100%" height="100%"></iframe>
   </div>
