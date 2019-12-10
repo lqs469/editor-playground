@@ -21,7 +21,7 @@ export default () => {
         plugins: exampleSetup({ schema: mySchema })
       })
     })
-  })
+  }, [])
 
   return (
     <div>
@@ -37,7 +37,7 @@ export default () => {
         its styling from the menu. The basic schema
         supports <em>emphasis</em>, <strong>strong
         text</strong>, <a href="http://marijnhaverbeke.nl/blog">links</a>, <code>code
-        font</code>, and <img alt="img" src="/img/smiley.png" /> images.</p>
+        font</code>, and <img alt="img" src="https://wx1.sinaimg.cn/large/61457563ly1g89kv4liudj20p90e014d.jpg" /> images.</p>
 
         <p>Block-level structure can be manipulated with key bindings (try
         ctrl-shift-2 to create a level 2 heading, or enter in an empty
