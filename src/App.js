@@ -6,6 +6,7 @@ import DraftJS from './DraftJS';
 import Draftail from './Draftail';
 import Prosemirror from './Prosemirror';
 import CZIProsemirror from './CZI-Prosemirror';
+import Quill from './Quill';
 
 function App() {
   const Home = () => <h1>Editor Playground</h1>
@@ -20,8 +21,9 @@ function App() {
         <Link to="draftail">Draftail</Link> | {" "}
         <Link to="prosemirror">Prosemirror</Link> | {" "}
         <Link to="czi-prosemirror">CZI-Prosemirror</Link> | {" "}
+        <Link to="quill">Quill</Link> | {" "}
       </header>
-      <Router style={{ height: 'calc(100% - 20px)' }}>
+      <Router style={{ height: 'calc(100% - 20px)', overflow: 'auto' }}>
         <Home path="/" />
         <PubPub path="pubpub" />
         <EditorJS path="editor" />
@@ -29,6 +31,7 @@ function App() {
         <Draftail path='draftail' />
         <Prosemirror path='prosemirror' />
         <CZIProsemirror path='czi-prosemirror' />
+        <Quill path='quill' />
       </Router>
     </div>
   );
