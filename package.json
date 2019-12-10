@@ -28,6 +28,9 @@
     "czi-prosemirror": "^1.0.0",
     "draft-js": "^0.10.5",
     "draftail": "^1.3.0",
+    "emotion": "^10.0.23",
+    "is-hotkey": "^0.1.6",
+    "is-url": "^1.2.4",
     "node-sass": "^4.13.0",
     "prosemirror-example-setup": "^1.1.2",
     "prosemirror-model": "^1.8.2",
@@ -39,6 +42,9 @@
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-scripts": "3.3.0",
+    "slate": "^0.52.5",
+    "slate-history": "^0.52.5",
+    "slate-react": "^0.52.6",
     "styled-components": "^4.4.1"
   },
   "scripts": {

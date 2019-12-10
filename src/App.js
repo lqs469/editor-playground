@@ -7,6 +7,7 @@ import Draftail from './Draftail';
 import Prosemirror from './Prosemirror';
 import CZIProsemirror from './CZI-Prosemirror';
 import Quill from './Quill';
+import SlateJS from './SlateJS'
 
 function App() {
   const Home = () => <h1>Editor Playground</h1>
@@ -16,12 +17,13 @@ function App() {
       <header style={{ background: '#aaa', borderBottom: 'solid 1px #000' }}>
         <Link to="/">Editor Playground</Link> | {" "}
         <Link to="pubpub">PubPub-Editor</Link> | {" "}
-        <Link to="editor">Editor.js</Link> | {" "}
-        <Link to="draft">Draft.js</Link> | {" "}
+        <Link to="editor">EditorJs</Link> | {" "}
+        <Link to="draft">Draft</Link> | {" "}
         <Link to="draftail">Draftail</Link> | {" "}
         <Link to="prosemirror">Prosemirror</Link> | {" "}
         <Link to="czi-prosemirror">CZI-Prosemirror</Link> | {" "}
         <Link to="quill">Quill</Link> | {" "}
+        <Link to="slate">Slate</Link> | {" "}
       </header>
       <Router style={{ height: 'calc(100% - 20px)', overflow: 'auto' }}>
         <Home path="/" />
@@ -32,6 +34,7 @@ function App() {
         <Prosemirror path='prosemirror' />
         <CZIProsemirror path='czi-prosemirror' />
         <Quill path='quill' />
+        <SlateJS path='slate' />
       </Router>
     </div>
   );
