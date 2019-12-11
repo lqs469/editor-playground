@@ -11,7 +11,7 @@ import {
   useFocused,
   withReact,
 } from "slate-react";
-import { Editor, createEditor } from "slate";
+import { Editor, Range, Point, createEditor } from "slate";
 import { withHistory } from "slate-history";
 import { css } from 'emotion';
 import { Button, Icon, Toolbar } from "./components";
@@ -33,6 +33,19 @@ const BLOCK_FORMATS = [
   "block-quote"
 ];
 
+const SHORTCUTS = {
+  '*': 'list-item',
+  '-': 'list-item',
+  '+': 'list-item',
+  '>': 'block-quote',
+  '#': 'heading-one',
+  '##': 'heading-two',
+  '###': 'heading-three',
+  '####': 'heading-four',
+  '#####': 'heading-five',
+  '######': 'heading-six',
+}
+
 const withRichText = editor => {
   const { exec, isInline, isVoid } = editor;
 
@@ -45,37 +58,97 @@ const withRichText = editor => {
   }
 
   editor.exec = command => {
+    const { selection } = editor
     let text = ''
+
     switch (command.type) {
-      case 'insert_data' || 'insert_text': {
-        text = command.type === 'insert_data'
-        ? command.data.getData('text/plain')
-        : command.text
+      case 'insert_data':
+      case 'insert_text': {
+        if (command.type === 'insert_data') {
+          text = command.data.getData('text/plain')
+          const { files } = command.data
 
-        const { files } = command.data
+          if (files && files.length > 0) {
+            for (const file of files) {
+              const reader = new FileReader()
+              const [mime] = file.type.split('/')
 
-        if (files && files.length > 0) {
-          for (const file of files) {
-            const reader = new FileReader()
-            const [mime] = file.type.split('/')
+              if (mime === 'image') {
+                reader.addEventListener('load', () => {
+                  const url = reader.result
+                  editor.exec({ type: 'insert_image', url })
+                })
 
-            if (mime === 'image') {
-              reader.addEventListener('load', () => {
-                const url = reader.result
-                editor.exec({ type: 'insert_image', url })
-              })
+                reader.readAsDataURL(file)
+              }
+            }
+          } else if (isImageUrl(text)) {
+            editor.exec({ type: 'insert_image', url: text })
+          } else if (text && isUrl(text)) {
+            wrapLink(editor, text)
+          }
+        } else if (command.type === 'insert_text') {
+          text = command.text
 
-              reader.readAsDataURL(file)
+          if (
+            text === ' ' &&
+            selection &&
+            Range.isCollapsed(selection)
+          ) {
+            const { anchor } = selection
+            const [block] = Editor.nodes(editor, { match: 'block' })
+            const path = block ? block[1] : []
+            const start = Editor.start(editor, path)
+            const range = { anchor, focus: start }
+            const beforeText = Editor.text(editor, range)
+            const type = SHORTCUTS[beforeText]
+      
+            if (type) {
+              Editor.select(editor, range)
+              Editor.delete(editor)
+              Editor.setNodes(editor, { type }, { match: 'block' })
+      
+              if (type === 'list-item') {
+                const list = { type: 'bulleted-list', children: [] }
+                Editor.wrapNodes(editor, list, { match: { type: 'list-item' } })
+              }
+      
+              return
             }
           }
-        } else if (isImageUrl(text)) {
-          editor.exec({ type: 'insert_image', url: text })
-        } else if (text && isUrl(text)) {
-          wrapLink(editor, text)
-        } else {
-          exec(command)
         }
 
+        exec(command)
+        break
+      }
+
+      case 'delete_backward': {
+        if (
+          selection &&
+          Range.isCollapsed(selection)
+        ) {
+          const [match] = Editor.nodes(editor, { match: 'block' })
+    
+          if (match) {
+            const [block, path] = match
+            const start = Editor.start(editor, path)
+    
+            if (
+              block.type !== 'paragraph' &&
+              Point.equals(selection.anchor, start)
+            ) {
+              Editor.setNodes(editor, { type: 'paragraph' })
+    
+              if (block.type === 'list-item') {
+                Editor.unwrapNodes(editor, { match: { type: 'bulleted-list' } })
+              }
+    
+              return
+            }
+          }
+        }
+
+        exec(command)
         break
       }
 
@@ -90,7 +163,7 @@ const withRichText = editor => {
       case 'insert_link': {
         const { url } = command
 
-        if (editor.selection) {
+        if (selection) {
           wrapLink(editor, url)
         }
 
@@ -299,6 +372,14 @@ const Element = props => {
       return <h1 {...attributes}>{children}</h1>;
     case "heading-two":
       return <h2 {...attributes}>{children}</h2>;
+    case 'heading-three':
+      return <h3 {...attributes}>{children}</h3>
+    case 'heading-four':
+      return <h4 {...attributes}>{children}</h4>
+    case 'heading-five':
+      return <h5 {...attributes}>{children}</h5>
+    case 'heading-six':
+      return <h6 {...attributes}>{children}</h6>
     case "list-item":
       return <li {...attributes}>{children}</li>;
     case "numbered-list":
