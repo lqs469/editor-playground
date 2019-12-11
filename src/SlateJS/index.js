@@ -60,7 +60,10 @@ const withRichText = editor => {
   }
 
   editor.isVoid = element => {
-    return element.type === 'image' ? true : isVoid(element)
+    return {
+      image: true,
+      video: true,
+    }[element.type] || isVoid(element)
   }
 
   editor.exec = command => {
@@ -90,7 +93,7 @@ const withRichText = editor => {
             }
           } else if (isImageUrl(text)) {
             editor.exec({ type: 'insert_image', url: text })
-          } else if (text && isUrl(text)) {
+          } else if (text) {
             wrapLink(editor, text)
           }
         } else if (command.type === 'insert_text') {
@@ -273,12 +276,13 @@ const isImageUrl = url => {
 const wrapLink = (editor, url) => {
   if (isLinkActive(editor)) {
     Editor.unwrapNodes(editor, { match: { type: 'link' } })
-    return
   }
 
-  const link = { type: 'link', url, children: [] }
-  Editor.wrapNodes(editor, link, { split: true })
-  Editor.collapse(editor, { edge: 'end' })
+  if (url && isUrl(url)) {
+    const link = { type: 'link', url, children: [] }
+    Editor.wrapNodes(editor, link, { split: true })
+    Editor.collapse(editor, { edge: 'end' })
+  }
 }
 
 const FormatButton = ({ format, icon }) => {
@@ -308,7 +312,9 @@ const LinkButton = () => {
       onMouseDown={event => {
         event.preventDefault()
         const url = window.prompt('Enter the URL of the link:', linkValue);
-        editor.exec({ type: 'insert_link', url })
+        if (url !== null) {
+          editor.exec({ type: 'insert_link', url })
+        }
       }}
     >
       <Icon>link</Icon>
@@ -436,6 +442,8 @@ const Element = props => {
       return <ImageElement {...props} />
     case 'check-list-item':
       return <CheckListItemElement {...props} />
+    case 'video':
+      return <VideoElement {...props} />
     default:
       return <p {...attributes}>{children}</p>;
   }
@@ -524,7 +532,7 @@ const CheckListItemElement = ({ attributes, children, element }) => {
         className={css`
           flex: 1;
           opacity: ${checked ? 0.666 : 1};
-          text-decoration: ${checked ? 'none' : 'line-through'};
+          text-decoration: ${!checked ? 'none' : 'line-through'};
           &:focus {
             outline: none;
           }
@@ -532,6 +540,81 @@ const CheckListItemElement = ({ attributes, children, element }) => {
       >
         {children}
       </span>
+    </div>
+  )
+}
+
+const VideoElement = ({ attributes, children, element }) => {
+  const editor = useEditor()
+  const selected = useSelected()
+  const focused = useFocused()
+  const { url } = element
+
+  return (
+    <div {...attributes}>
+      <div
+        contentEditable={false}
+        style={{
+          position: 'relative',
+          boxShadow: selected && focused ? '0 0 0 3px #B4D5FF' : 'none',
+        }}
+      >
+        <div
+          style={{
+            display: selected && focused ? 'none' : 'block',
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            height: '100%',
+            width: '100%',
+            cursor: 'cell',
+            zIndex: 1,
+          }}
+        />
+        <div
+          className={css`
+            padding: 75% 0 0 0;
+            position: relative;
+          `}
+        >
+          <iframe
+            title={url}
+            src={`${url}?title=0&byline=0&portrait=0`}
+            frameBorder="0"
+            className={css`
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+            `}
+          />
+        </div>
+        {selected && focused ? (
+          <div
+            className={css`
+              position: absolute;
+              background: #fff;
+              top: 0;
+              left: 0;
+              width: 100%;
+              boxSizing: border-box;
+            `}
+            onMouseDown={e => {
+              e.stopPropagation()
+              e.preventDefault()
+              const newUrl = window.prompt('Enter the URL of the video:', url);
+              if (newUrl !== null) {
+                const path = ReactEditor.findPath(editor, element)
+                Editor.setNodes(editor, { url: newUrl }, { at: path })
+              }
+            }}
+          >
+            {url}
+          </div>
+        ) : null}
+      </div>
+      {children}
     </div>
   )
 }

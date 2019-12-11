@@ -1,5 +1,9 @@
 export default [
   {
+    type: 'heading-one',
+    children: [{ text: '我是标题🍉' }],
+  },
+  {
     type: 'paragraph',
     children: [
       {
@@ -24,16 +28,12 @@ export default [
   },
   {
     type: 'image',
-    url: 'https://source.unsplash.com/kFrdX5IeQzI',
+    url: 'https://www.tesla.com/tesla_theme/assets/img/_vehicle_redesign/roadster_and_semi/roadster/hero.jpg',
     children: [{ text: '' }],
   },
   {
     type: 'block-quote',
     children: [{ text: 'A wise quote.' }],
-  },
-  {
-    type: 'heading-two',
-    children: [{ text: 'Try it out!' }],
   },
   {
     type: 'paragraph',
@@ -65,13 +65,12 @@ export default [
     children: [{ text: 'Criss-cross!' }],
   },
   {
-    type: 'check-list-item',
-    checked: false,
-    children: [{ text: 'Cha cha real smooth…' }],
+    type: 'heading-two',
+    children: [{ text: '嵌入video' }],
   },
   {
-    type: 'check-list-item',
-    checked: false,
-    children: [{ text: "Let's go to work!" }],
-  },
+    type: 'video',
+    url: 'https://player.vimeo.com/video/26689853',
+    children: [{ text: '' }],
+  }
 ]
