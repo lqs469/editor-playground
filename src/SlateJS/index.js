@@ -1,9 +1,19 @@
 import React, { useCallback, useMemo, useState } from "react";
 import isHotkey from "is-hotkey";
 import isUrl from 'is-url';
-import { Editable, withReact, useSlate, Slate } from "slate-react";
+import imageExtensions from 'image-extensions'
+import {
+  Slate,
+  Editable,
+  useSlate,
+  useEditor,
+  useSelected,
+  useFocused,
+  withReact,
+} from "slate-react";
 import { Editor, createEditor } from "slate";
 import { withHistory } from "slate-history";
+import { css } from 'emotion';
 import { Button, Icon, Toolbar } from "./components";
 import initialValue from "./data";
 
@@ -22,6 +32,109 @@ const BLOCK_FORMATS = [
   "heading-two",
   "block-quote"
 ];
+
+const withRichText = editor => {
+  const { exec, isInline, isVoid } = editor;
+
+  editor.isInline = element => {
+    return element.type === 'link' ? true : isInline(element)
+  }
+
+  editor.isVoid = element => {
+    return element.type === 'image' ? true : isVoid(element)
+  }
+
+  editor.exec = command => {
+    let text = ''
+    switch (command.type) {
+      case 'insert_data' || 'insert_text': {
+        text = command.type === 'insert_data'
+        ? command.data.getData('text/plain')
+        : command.text
+
+        const { files } = command.data
+
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const reader = new FileReader()
+            const [mime] = file.type.split('/')
+
+            if (mime === 'image') {
+              reader.addEventListener('load', () => {
+                const url = reader.result
+                editor.exec({ type: 'insert_image', url })
+              })
+
+              reader.readAsDataURL(file)
+            }
+          }
+        } else if (isImageUrl(text)) {
+          editor.exec({ type: 'insert_image', url: text })
+        } else if (text && isUrl(text)) {
+          wrapLink(editor, text)
+        } else {
+          exec(command)
+        }
+
+        break
+      }
+
+      case 'insert_image': {
+        const { url } = command
+        const text = { text: '' }
+        const image = { type: 'image', url, children: [text] }
+        Editor.insertNodes(editor, image)
+        break
+      }
+
+      case 'insert_link': {
+        const { url } = command
+
+        if (editor.selection) {
+          wrapLink(editor, url)
+        }
+
+        break
+      }
+
+      case 'toggle_format': {
+        const { format } = command;
+        const isActive = isFormatActive(editor, format);
+        const isList = LIST_FORMATS.includes(format);
+
+        if (TEXT_FORMATS.includes(format)) {
+          Editor.setNodes(
+            editor,
+            { [format]: isActive ? null : true },
+            { match: "text", split: true }
+          );
+        }
+
+        if (BLOCK_FORMATS.includes(format)) {
+          for (const f of LIST_FORMATS) {
+            Editor.unwrapNodes(editor, { match: { type: f }, split: true });
+          }
+
+          Editor.setNodes(editor, {
+            type: isActive ? "paragraph" : isList ? "list-item" : format
+          });
+
+          if (!isActive && isList) {
+            Editor.wrapNodes(editor, { type: format, children: [] });
+          }
+        }
+
+        break
+      }
+
+      default: {
+        exec(command)
+      }
+    }
+  };
+
+  return editor;
+};
 
 const isFormatActive = (editor, format) => {
   if (TEXT_FORMATS.includes(format)) {
@@ -45,70 +158,28 @@ const isFormatActive = (editor, format) => {
   return false;
 };
 
-const withRichText = editor => {
-  const { exec, isInline } = editor;
+const isLinkActive = editor => {
+  const [link] = Editor.nodes(editor, { match: { type: 'link' } })
+  return !!link
+}
 
-  editor.isInline = element => {
-    return element.type === 'link' ? true : isInline(element)
+const isImageUrl = url => {
+  if (!url) return false
+  if (!isUrl(url)) return false
+  const ext = new URL(url).pathname.split('.').pop()
+  return imageExtensions.includes(ext)
+}
+
+const wrapLink = (editor, url) => {
+  if (isLinkActive(editor)) {
+    Editor.unwrapNodes(editor, { match: { type: 'link' } })
+    return
   }
 
-  editor.exec = command => {
-    let text = ''
-
-    if (command.type === 'insert_data') {
-      text = command.data.getData('text/plain')
-    } else if (command.type === 'insert_text') {
-      text = command.text
-    }
-
-    if (text && isUrl(text)) {
-      wrapLink(editor, text)
-    }
-
-
-    if (command.type === 'insert_link') {
-      const { url } = command
-
-      if (editor.selection) {
-        wrapLink(editor, url)
-      }
-
-      return
-    }
-
-    if (command.type === "toggle_format") {
-      const { format } = command;
-      const isActive = isFormatActive(editor, format);
-      const isList = LIST_FORMATS.includes(format);
-
-      if (TEXT_FORMATS.includes(format)) {
-        Editor.setNodes(
-          editor,
-          { [format]: isActive ? null : true },
-          { match: "text", split: true }
-        );
-      }
-
-      if (BLOCK_FORMATS.includes(format)) {
-        for (const f of LIST_FORMATS) {
-          Editor.unwrapNodes(editor, { match: { type: f }, split: true });
-        }
-
-        Editor.setNodes(editor, {
-          type: isActive ? "paragraph" : isList ? "list-item" : format
-        });
-
-        if (!isActive && isList) {
-          Editor.wrapNodes(editor, { type: format, children: [] });
-        }
-      }
-    } else {
-      exec(command);
-    }
-  };
-
-  return editor;
-};
+  const link = { type: 'link', url, children: [] }
+  Editor.wrapNodes(editor, link, { split: true })
+  Editor.collapse(editor, { edge: 'end' })
+}
 
 const FormatButton = ({ format, icon }) => {
   const editor = useSlate();
@@ -125,11 +196,6 @@ const FormatButton = ({ format, icon }) => {
   );
 };
 
-const isLinkActive = editor => {
-  const [link] = Editor.nodes(editor, { match: { type: 'link' } })
-  return !!link
-}
-
 const LinkButton = () => {
   const editor = useSlate()
   const isActive = isLinkActive(editor);
@@ -142,7 +208,6 @@ const LinkButton = () => {
       onMouseDown={event => {
         event.preventDefault()
         const url = window.prompt('Enter the URL of the link:', linkValue);
-        // if (!url) return
         editor.exec({ type: 'insert_link', url })
       }}
     >
@@ -151,20 +216,26 @@ const LinkButton = () => {
   )
 }
 
-const wrapLink = (editor, url) => {
-  if (isLinkActive(editor)) {
-    Editor.unwrapNodes(editor, { match: { type: 'link' } })
-    return
-  }
-
-  const link = { type: 'link', url, children: [] }
-  Editor.wrapNodes(editor, link, { split: true })
-  Editor.collapse(editor, { edge: 'end' })
+const InsertImageButton = () => {
+  const editor = useEditor()
+  return (
+    <Button
+      onMouseDown={event => {
+        event.preventDefault()
+        const url = window.prompt('请输入图片链接')
+        if (!url) return
+        editor.exec({ type: 'insert_image', url })
+      }}
+    >
+      <Icon>image</Icon>
+    </Button>
+  )
 }
 
 export default () => {
   const [value, setValue] = useState(initialValue);
   const [selection, setSelection] = useState(null);
+
   const renderElement = useCallback(props => <Element {...props} />, []);
   const renderLeaf = useCallback(props => <Leaf {...props} />, []);
   const editor = useMemo(
@@ -194,11 +265,12 @@ export default () => {
           <FormatButton format="numbered-list" icon="format_list_numbered" />
           <FormatButton format="bulleted-list" icon="format_list_bulleted" />
           <LinkButton />
+          <InsertImageButton />
         </Toolbar>
         <Editable
           renderElement={renderElement}
           renderLeaf={renderLeaf}
-          placeholder="Enter some rich text…"
+          placeholder="在这里输入..."
           spellCheck
           autoFocus
           onKeyDown={event => {
@@ -215,7 +287,9 @@ export default () => {
   );
 };
 
-const Element = ({ attributes, children, element }) => {
+const Element = props => {
+  const { attributes, children, element } = props
+
   switch (element.type) {
     case "block-quote":
       return <blockquote {...attributes}>{children}</blockquote>;
@@ -231,6 +305,8 @@ const Element = ({ attributes, children, element }) => {
       return <ol {...attributes}>{children}</ol>;
     case 'link':
       return <a {...attributes} href={element.url}>{children}</a>;
+    case 'image':
+      return <ImageElement {...props} />
     default:
       return <p {...attributes}>{children}</p>;
   }
@@ -255,3 +331,25 @@ const Leaf = ({ attributes, children, leaf }) => {
 
   return <span {...attributes}>{children}</span>;
 };
+
+const ImageElement = ({ attributes, children, element }) => {
+  const selected = useSelected()
+  const focused = useFocused()
+  return (
+    <div {...attributes}>
+      <div contentEditable={false}>
+        <img
+          alt={element.url}
+          src={element.url}
+          className={css`
+            display: block;
+            max-width: 100%;
+            max-height: 20em;
+            box-shadow: ${selected && focused ? '0 0 0 3px #B4D5FF' : 'none'};
+          `}
+        />
+      </div>
+      {children}
+    </div>
+  )
+}
