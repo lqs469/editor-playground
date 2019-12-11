@@ -28,26 +28,8 @@ export default [
     children: [{ text: '' }],
   },
   {
-    type: 'paragraph',
-    children: [
-      {
-        text:
-          'This example shows images in action. It features two ways to add images. You can either add an image via the toolbar icon above, or if you want in on a little secret, copy an image URL to your keyboard and paste it anywhere in the editor!',
-      },
-    ],
-  },
-  {
     type: 'block-quote',
     children: [{ text: 'A wise quote.' }],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      {
-        text:
-          'Order when you start a line with "## " you get a level-two heading, like this:',
-      },
-    ],
   },
   {
     type: 'heading-two',
@@ -61,5 +43,35 @@ export default [
           'Try it out for yourself! Try starting a new line with ">", "-", or "#"s.',
       },
     ],
+  },
+  {
+    type: 'check-list-item',
+    checked: true,
+    children: [{ text: 'Slide to the left.' }],
+  },
+  {
+    type: 'check-list-item',
+    checked: true,
+    children: [{ text: 'Slide to the right.' }],
+  },
+  {
+    type: 'check-list-item',
+    checked: false,
+    children: [{ text: 'Criss-cross.' }],
+  },
+  {
+    type: 'check-list-item',
+    checked: true,
+    children: [{ text: 'Criss-cross!' }],
+  },
+  {
+    type: 'check-list-item',
+    checked: false,
+    children: [{ text: 'Cha cha real smooth…' }],
+  },
+  {
+    type: 'check-list-item',
+    checked: false,
+    children: [{ text: "Let's go to work!" }],
   },
 ]

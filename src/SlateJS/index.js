@@ -9,7 +9,9 @@ import {
   useEditor,
   useSelected,
   useFocused,
+  useReadOnly,
   withReact,
+  ReactEditor
 } from "slate-react";
 import { Editor, Range, Point, createEditor } from "slate";
 import { withHistory } from "slate-history";
@@ -30,6 +32,10 @@ const BLOCK_FORMATS = [
   ...LIST_FORMATS,
   "heading-one",
   "heading-two",
+  "heading-three",
+  "heading-four",
+  "heading-five",
+  "heading-six",
   "block-quote"
 ];
 
@@ -127,10 +133,9 @@ const withRichText = editor => {
           selection &&
           Range.isCollapsed(selection)
         ) {
-          const [match] = Editor.nodes(editor, { match: 'block' })
-    
-          if (match) {
-            const [block, path] = match
+          const [matchBlock] = Editor.nodes(editor, { match: 'block' })
+          if (matchBlock) {
+            const [block, path] = matchBlock
             const start = Editor.start(editor, path)
     
             if (
@@ -143,6 +148,21 @@ const withRichText = editor => {
                 Editor.unwrapNodes(editor, { match: { type: 'bulleted-list' } })
               }
     
+              return
+            }
+          }
+
+          const [matchCheckList] = Editor.nodes(editor, { match: { type: 'check-list-item' } })
+          if (matchCheckList) {
+            const [, path] = matchCheckList
+            const start = Editor.start(editor, path)
+    
+            if (Point.equals(selection.anchor, start)) {
+              Editor.setNodes(
+                editor,
+                { type: 'paragraph' },
+                { match: { type: 'check-list-item' } }
+              )
               return
             }
           }
@@ -197,6 +217,13 @@ const withRichText = editor => {
           }
         }
 
+        break
+      }
+
+      case 'insert_check_list_item': {
+        const text = { text: '' }
+        const checkListItem = { type: 'check-list-item', checked: false, children: [text] }
+        Editor.insertNodes(editor, checkListItem)
         break
       }
 
@@ -305,6 +332,20 @@ const InsertImageButton = () => {
   )
 }
 
+const InsertCheckListButton = () => {
+  const editor = useEditor()
+  return (
+    <Button
+      onMouseDown={event => {
+        event.preventDefault()
+        editor.exec({ type: 'insert_check_list_item' })
+      }}
+    >
+      <Icon>check_circle_outline</Icon>
+    </Button>
+  )
+}
+
 export default () => {
   const [value, setValue] = useState(initialValue);
   const [selection, setSelection] = useState(null);
@@ -334,11 +375,16 @@ export default () => {
           <FormatButton format="code" icon="code" />
           <FormatButton format="heading-one" icon="looks_one" />
           <FormatButton format="heading-two" icon="looks_two" />
+          <FormatButton format="heading-three" icon="looks_3" />
+          <FormatButton format="heading-four" icon="looks_4" />
+          <FormatButton format="heading-five" icon="looks_5" />
+          <FormatButton format="heading-six" icon="looks_6" />
           <FormatButton format="block-quote" icon="format_quote" />
           <FormatButton format="numbered-list" icon="format_list_numbered" />
           <FormatButton format="bulleted-list" icon="format_list_bulleted" />
           <LinkButton />
           <InsertImageButton />
+          <InsertCheckListButton />
         </Toolbar>
         <Editable
           renderElement={renderElement}
@@ -388,6 +434,8 @@ const Element = props => {
       return <a {...attributes} href={element.url}>{children}</a>;
     case 'image':
       return <ImageElement {...props} />
+    case 'check-list-item':
+      return <CheckListItemElement {...props} />
     default:
       return <p {...attributes}>{children}</p>;
   }
@@ -431,6 +479,59 @@ const ImageElement = ({ attributes, children, element }) => {
         />
       </div>
       {children}
+    </div>
+  )
+}
+
+const CheckListItemElement = ({ attributes, children, element }) => {
+  const editor = useEditor()
+  const readOnly = useReadOnly()
+  const { checked } = element
+  return (
+    <div
+      {...attributes}
+      className={css`
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        & + & {
+          margin-top: 0;
+        }
+      `}
+    >
+      <span
+        contentEditable={false}
+        className={css`
+          margin-right: 0.75em;
+        `}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={event => {
+            const path = ReactEditor.findPath(editor, element)
+            Editor.setNodes(
+              editor,
+              { checked: event.target.checked },
+              { at: path }
+            )
+          }}
+        />
+      </span>
+      <span
+        contentEditable={!readOnly}
+        suppressContentEditableWarning
+        className={css`
+          flex: 1;
+          opacity: ${checked ? 0.666 : 1};
+          text-decoration: ${checked ? 'none' : 'line-through'};
+          &:focus {
+            outline: none;
+          }
+        `}
+      >
+        {children}
+      </span>
     </div>
   )
 }
