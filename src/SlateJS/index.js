@@ -46,9 +46,36 @@ const isFormatActive = (editor, format) => {
 };
 
 const withRichText = editor => {
-  const { exec } = editor;
+  const { exec, isInline } = editor;
+
+  editor.isInline = element => {
+    return element.type === 'link' ? true : isInline(element)
+  }
 
   editor.exec = command => {
+    let text = ''
+
+    if (command.type === 'insert_data') {
+      text = command.data.getData('text/plain')
+    } else if (command.type === 'insert_text') {
+      text = command.text
+    }
+
+    if (text && isUrl(text)) {
+      wrapLink(editor, text)
+    }
+
+
+    if (command.type === 'insert_link') {
+      const { url } = command
+
+      if (editor.selection) {
+        wrapLink(editor, url)
+      }
+
+      return
+    }
+
     if (command.type === "toggle_format") {
       const { format } = command;
       const isActive = isFormatActive(editor, format);
@@ -83,47 +110,6 @@ const withRichText = editor => {
   return editor;
 };
 
-const Element = ({ attributes, children, element }) => {
-  switch (element.type) {
-    case "block-quote":
-      return <blockquote {...attributes}>{children}</blockquote>;
-    case "bulleted-list":
-      return <ul {...attributes}>{children}</ul>;
-    case "heading-one":
-      return <h1 {...attributes}>{children}</h1>;
-    case "heading-two":
-      return <h2 {...attributes}>{children}</h2>;
-    case "list-item":
-      return <li {...attributes}>{children}</li>;
-    case "numbered-list":
-      return <ol {...attributes}>{children}</ol>;
-    case 'link':
-      return <a {...attributes} href={element.url}>{children}</a>;
-    default:
-      return <p {...attributes}>{children}</p>;
-  }
-};
-
-const Leaf = ({ attributes, children, leaf }) => {
-  if (leaf.bold) {
-    children = <strong>{children}</strong>;
-  }
-
-  if (leaf.code) {
-    children = <code>{children}</code>;
-  }
-
-  if (leaf.italic) {
-    children = <em>{children}</em>;
-  }
-
-  if (leaf.underlined) {
-    children = <u>{children}</u>;
-  }
-
-  return <span {...attributes}>{children}</span>;
-};
-
 const FormatButton = ({ format, icon }) => {
   const editor = useSlate();
   return (
@@ -146,13 +132,17 @@ const isLinkActive = editor => {
 
 const LinkButton = () => {
   const editor = useSlate()
+  const isActive = isLinkActive(editor);
+  const [link] = Editor.nodes(editor, { match: { type: 'link' } })
+  const linkValue = link && link[0] ? link[0].url : ''
+
   return (
     <Button
-      active={isLinkActive(editor)}
+      active={isActive}
       onMouseDown={event => {
         event.preventDefault()
-        const url = window.prompt('Enter the URL of the link:')
-        if (!url) return
+        const url = window.prompt('Enter the URL of the link:', linkValue);
+        // if (!url) return
         editor.exec({ type: 'insert_link', url })
       }}
     >
@@ -161,49 +151,10 @@ const LinkButton = () => {
   )
 }
 
-const withLinks = editor => {
-  const { exec, isInline } = editor
-
-  editor.isInline = element => {
-    return element.type === 'link' ? true : isInline(element)
-  }
-
-  editor.exec = command => {
-    if (command.type === 'insert_link') {
-      const { url } = command
-
-      if (editor.selection) {
-        wrapLink(editor, url)
-      }
-
-      return
-    }
-
-    let text
-
-    if (command.type === 'insert_data') {
-      text = command.data.getData('text/plain')
-    } else if (command.type === 'insert_text') {
-      text = command.text
-    }
-
-    if (text && isUrl(text)) {
-      wrapLink(editor, text)
-    } else {
-      exec(command)
-    }
-  }
-
-  return editor
-}
-
-const unwrapLink = editor => {
-  Editor.unwrapNodes(editor, { match: { type: 'link' } })
-}
-
 const wrapLink = (editor, url) => {
   if (isLinkActive(editor)) {
-    unwrapLink(editor)
+    Editor.unwrapNodes(editor, { match: { type: 'link' } })
+    return
   }
 
   const link = { type: 'link', url, children: [] }
@@ -211,8 +162,7 @@ const wrapLink = (editor, url) => {
   Editor.collapse(editor, { edge: 'end' })
 }
 
-
-const RichTextExample = () => {
+export default () => {
   const [value, setValue] = useState(initialValue);
   const [selection, setSelection] = useState(null);
   const renderElement = useCallback(props => <Element {...props} />, []);
@@ -265,4 +215,43 @@ const RichTextExample = () => {
   );
 };
 
-export default RichTextExample;
+const Element = ({ attributes, children, element }) => {
+  switch (element.type) {
+    case "block-quote":
+      return <blockquote {...attributes}>{children}</blockquote>;
+    case "bulleted-list":
+      return <ul {...attributes}>{children}</ul>;
+    case "heading-one":
+      return <h1 {...attributes}>{children}</h1>;
+    case "heading-two":
+      return <h2 {...attributes}>{children}</h2>;
+    case "list-item":
+      return <li {...attributes}>{children}</li>;
+    case "numbered-list":
+      return <ol {...attributes}>{children}</ol>;
+    case 'link':
+      return <a {...attributes} href={element.url}>{children}</a>;
+    default:
+      return <p {...attributes}>{children}</p>;
+  }
+};
+
+const Leaf = ({ attributes, children, leaf }) => {
+  if (leaf.bold) {
+    children = <strong>{children}</strong>;
+  }
+
+  if (leaf.code) {
+    children = <code>{children}</code>;
+  }
+
+  if (leaf.italic) {
+    children = <em>{children}</em>;
+  }
+
+  if (leaf.underlined) {
+    children = <u>{children}</u>;
+  }
+
+  return <span {...attributes}>{children}</span>;
+};
