@@ -18,6 +18,7 @@ import { withHistory } from "slate-history";
 import { css } from 'emotion';
 import { Button, Icon, Toolbar } from "./components";
 import initialValue from "./data";
+import './index.css';
 
 const HOTKEYS = {
   "mod+b": "bold",
@@ -230,6 +231,14 @@ const withRichText = editor => {
         break
       }
 
+      case 'insert_video': {
+        const { url } = command
+        const text = { text: '' }
+        const video = { type: 'video', url, children: [text] }
+        Editor.insertNodes(editor, video)
+        break
+      }
+
       default: {
         exec(command)
       }
@@ -338,6 +347,22 @@ const InsertImageButton = () => {
   )
 }
 
+const InsertVideoButton = () => {
+  const editor = useEditor()
+  return (
+    <Button
+      onMouseDown={event => {
+        event.preventDefault()
+        const url = window.prompt('请输入视频链接')
+        if (!url || !isUrl(url)) return
+        editor.exec({ type: 'insert_video', url })
+      }}
+    >
+      <Icon>play_arrow</Icon>
+    </Button>
+  )
+}
+
 const InsertCheckListButton = () => {
   const editor = useEditor()
   return (
@@ -362,6 +387,8 @@ export default () => {
     () => withRichText(withHistory(withReact(createEditor()))),
     []
   );
+
+  console.log(value)
 
   return (
     <div  style={{ width: '700px', margin: '20px auto' }}>
@@ -390,6 +417,7 @@ export default () => {
           <FormatButton format="bulleted-list" icon="format_list_bulleted" />
           <LinkButton />
           <InsertImageButton />
+          <InsertVideoButton />
           <InsertCheckListButton />
         </Toolbar>
         <Editable
@@ -476,7 +504,7 @@ const ImageElement = ({ attributes, children, element }) => {
     <div {...attributes}>
       <div contentEditable={false}>
         <img
-          alt={element.url}
+          alt={element.children[0].text}
           src={element.url}
           className={css`
             display: block;
@@ -557,6 +585,7 @@ const VideoElement = ({ attributes, children, element }) => {
         style={{
           position: 'relative',
           boxShadow: selected && focused ? '0 0 0 3px #B4D5FF' : 'none',
+          background: '#aaa',
         }}
       >
         <div
@@ -604,9 +633,12 @@ const VideoElement = ({ attributes, children, element }) => {
               e.stopPropagation()
               e.preventDefault()
               const newUrl = window.prompt('Enter the URL of the video:', url);
-              if (newUrl !== null) {
+              if (newUrl !== null && newUrl !== '') {
                 const path = ReactEditor.findPath(editor, element)
                 Editor.setNodes(editor, { url: newUrl }, { at: path })
+              } else if (newUrl === '') {
+                const path = ReactEditor.findPath(editor, element)
+                Editor.removeNodes(editor, { at: path })
               }
             }}
           >

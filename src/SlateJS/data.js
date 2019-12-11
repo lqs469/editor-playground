@@ -4,12 +4,18 @@ export default [
     children: [{ text: '我是标题🍉' }],
   },
   {
-    type: 'paragraph',
     children: [
       {
-        text: 'A line of text in a paragraph.',
+        text: 'A line of'
       },
-    ],
+      {
+        code: true,
+        text: 'A line of text in'
+      },
+      {
+        text: ' paragraph.'
+      }
+    ]
   },
   {
     children: [
@@ -29,7 +35,7 @@ export default [
   {
     type: 'image',
     url: 'https://www.tesla.com/tesla_theme/assets/img/_vehicle_redesign/roadster_and_semi/roadster/hero.jpg',
-    children: [{ text: '' }],
+    children: [{ text: 'img-text' }],
   },
   {
     type: 'block-quote',
