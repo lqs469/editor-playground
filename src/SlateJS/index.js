@@ -388,8 +388,6 @@ export default () => {
     []
   );
 
-  console.log(value)
-
   return (
     <div  style={{ width: '700px', margin: '20px auto' }}>
       <Slate

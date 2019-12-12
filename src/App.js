@@ -8,6 +8,7 @@ import Prosemirror from './Prosemirror';
 import CZIProsemirror from './CZI-Prosemirror';
 import Quill from './Quill';
 import SlateJS from './SlateJS'
+import SlateEditableTable from './SlateEditableTable'
 
 function App() {
   const Home = () => <h1>Editor Playground</h1>
@@ -24,6 +25,7 @@ function App() {
         <Link to="czi-prosemirror">CZI-Prosemirror</Link> | {" "}
         <Link to="quill">Quill</Link> | {" "}
         <Link to="slate">Slate</Link> | {" "}
+        <Link to="slate-table">Slate-Editable-Table</Link>
       </header>
       <Router style={{ height: 'calc(100% - 20px)', overflow: 'auto' }}>
         <Home path="/" />
@@ -35,6 +37,7 @@ function App() {
         <CZIProsemirror path='czi-prosemirror' />
         <Quill path='quill' />
         <SlateJS path='slate' />
+        <SlateEditableTable path='slate-table' />
       </Router>
     </div>
   );

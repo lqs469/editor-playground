@@ -30,6 +30,7 @@
     "draftail": "^1.3.0",
     "emotion": "^10.0.23",
     "image-extensions": "^1.1.0",
+    "immutable": "^4.0.0-rc.12",
     "is-hotkey": "^0.1.6",
     "is-url": "^1.2.4",
     "node-sass": "^4.13.0",
@@ -44,6 +45,7 @@
     "react-dom": "^16.12.0",
     "react-scripts": "3.3.0",
     "slate": "^0.52.5",
+    "slate-editable-table": "^0.2.3",
     "slate-history": "^0.52.5",
     "slate-react": "^0.52.6",
     "styled-components": "^4.4.1"
