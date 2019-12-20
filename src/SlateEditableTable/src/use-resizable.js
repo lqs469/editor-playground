@@ -27,7 +27,6 @@ export const useResizableTable = (props) => {
   }, [props.disableResizing]);
 
   React.useEffect(() => {
-    debugger
     if (!ref.current) return;
     const size = createSize();
     if (size) {

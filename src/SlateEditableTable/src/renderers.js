@@ -23,16 +23,7 @@ const Table = memo(forwardRef((props, tableRef) => {
   
   const editor = useEditor();
 
-  useEffect(() => {
-    debugger
-    if (!ref.current) {
-      ref.current = props.attributes && props.attributes.ref && props.attributes.ref.current;
-    }
-    update();
-  }, []);
-
   const onInit = useCallback((values) => {
-    debugger
     props.onInit(editor, values);
   }, [editor]);
 
@@ -64,6 +55,13 @@ const Table = memo(forwardRef((props, tableRef) => {
     onUpdate,
     onHandleHover: props.onHandleMouseOver,
   });
+
+  useEffect(() => {
+    if (!ref.current) {
+      ref.current = props.attributes && props.attributes.ref && props.attributes.ref.current;
+    }
+    update();
+  }, []);
 
   useEffect(() => {
     props.store.subscribeDisableResizing(editor, v => {
@@ -243,41 +241,39 @@ const Content = memo(({ attributes, children, type }) => {
 
 
 const updateWidth = (editor, value) => {
-  Object.keys(value).forEach(k => {
-    if (editor.selection) {
+  if (editor.selection) {
+    Object.keys(value).forEach(k => {
       const [block] = Editor.nodes(editor, { match: { key: k } })
-      // const n = editor.value.document.getNode(k);
-      
-      console.log('⛔️[updateWidth] -> [isBlock]', block);
-      debugger
       if (!block || !block[0]) return;
   
-      const contentValue = defaultOptions.cellStyle && defaultOptions.cellStyle.padding
-        ? value[k] - defaultOptions.cellStyle.padding * 2 - 1
-        : value[k]
-
       const selectedType = block[0].type;
       const selectedData = block[0].data
       Editor.setNodes(editor, {
         type: selectedType,
-        data: { ...selectedData, width: contentValue },
+        data: { ...selectedData, width: value[k] },
       }, {
         match: { key: k }
       });
-    } else {
-      let { children = [] } = editor;
-
-      // BFS
-      let stack = [];
+    });
+  } else {
+    function fn(node, handler) {
+      if (node.key) {
+        handler(node);
+        return [node];
+      }
+      
+      const nodes = node.children.reduce((p, c) => {
+        const validNodes = fn(c, handler);
+        return [...p, ...validNodes];
+      }, []);
+      
+      return nodes;
     }
-
-
-    // if (!isBlock(n)) return;
-    // editor.setNodeByKey(k, {
-    //   type: n.type,
-    //   data: { ...n.data.toObject(), width: value[k] },
-    // });
-  });
+    
+    fn(editor, (node) => {
+      node.data = { ...node.data, width: value[node.key] };
+    });
+  }
 }
 
 // Table 渲染工厂
