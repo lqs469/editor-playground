@@ -21,7 +21,6 @@ function insertTable(editor, opts, columns = 2, rows = 2) {
   //   .insertBlock(table);
 
   // const { url } = command
-  console.log(JSON.stringify(table));
   Editor.insertNodes(editor, table);
 }
 

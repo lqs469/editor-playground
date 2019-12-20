@@ -16,11 +16,8 @@ import * as table from './layout';
 
 // 表格组件
 const Table = memo(forwardRef((props, tableRef) => {
-  console.log('🍎[InnerTable][props, tableRef]', props);
-
   const [disableResizing, forceUpdate] = React.useState(false);
   const maxWidth = typeof props.maxWidth === 'undefined' ? 'auto' : props.maxWidth + 'px';
-  
   const editor = useEditor();
 
   const onInit = useCallback((values) => {
@@ -69,6 +66,13 @@ const Table = memo(forwardRef((props, tableRef) => {
     });
   }, []);
 
+  useEffect(() => {
+    const { selection } = editor;
+    if (selection) {
+      console.log('⭐️', selection.anchor, selection.focus);
+    }
+  });
+
   React.useImperativeHandle(tableRef, () => ({
     update: () => {
       update();
@@ -91,7 +95,7 @@ const Table = memo(forwardRef((props, tableRef) => {
       style={{ ...props.style, ...tableStyle, maxWidth }}
       {...props.attributes}
       onDragStart={onDragStart}
-      type={props.type}
+      // type={props.type}
     >
       {props.children}
     </table>
@@ -105,8 +109,7 @@ const Table = memo(forwardRef((props, tableRef) => {
 
 // 表格单元
 const Cell = memo(props => {
-  console.log('[🔥Cell props]:', props);
-  const editor = useEditor()
+  // const editor = useEditor()
 
   const width = typeof props.node.data.width === 'undefined'
     ? 'auto'
@@ -152,7 +155,7 @@ const Cell = memo(props => {
   return (
     <td
       data-key={props['data-key']}
-      type={props.type}
+      // type={props.type}
       {...props.attributes}
       onMouseDown={e => {
         if (!(e.target instanceof HTMLElement)) return;
@@ -283,9 +286,9 @@ export const tableRenderer = (ref) => {
   
   return (props) => {
     const { attributes, children, element } = props;
-    console.log('💡[tableRenderer]', props, ref);
-    
     const editor = useEditor()
+
+
     switch (element.type) {
       case defaultOptions.typeTable: {
         return (
@@ -302,7 +305,7 @@ export const tableRenderer = (ref) => {
             style={opts.tableStyle}
             attributes={attributes}
           >
-            <tbody {...attributes}>{children}</tbody>
+            <tbody>{children}</tbody>
           </Table>
         )
       }
@@ -312,7 +315,7 @@ export const tableRenderer = (ref) => {
             {...attributes}
             style={defaultOptions.rowStyle}
             onDrag={e => e.preventDefault()}
-            type={element.type}
+            // type={element.type}
           >
             {children}
           </tr>

@@ -245,8 +245,6 @@ const Element = props => {
     case defaultOptions.typeRow:
     case defaultOptions.typeCell:
     case defaultOptions.typeContent:
-      console.log('😎', props);
-      
       return <TableRenderer {...props} />;
     default:
       return <p {...attributes}>{children}</p>;

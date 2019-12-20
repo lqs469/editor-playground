@@ -10,7 +10,9 @@ export default [
                     type: "editable_table_cell",
                     key: '0',
                     data: {
-                      "width": 100
+                        "width": 100,
+                        // rowspan: '2',
+                        // colspan: '2',
                     },
                     children: [
                         {
