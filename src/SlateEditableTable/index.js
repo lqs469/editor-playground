@@ -4,16 +4,16 @@ import {
   Slate,
   Editable,
   useSlate,
-  useEditor,
-  useSelected,
-  useFocused,
-  useReadOnly,
+  // useEditor,
+  // useSelected,
+  // useFocused,
+  // useReadOnly,
   withReact,
-  ReactEditor
+  // ReactEditor
 } from "slate-react";
 import { Editor, Range, Point, createEditor } from "slate";
 import { withHistory } from "slate-history";
-import { css } from 'emotion';
+// import { css } from 'emotion';
 import { Button, Icon, Toolbar } from "../SlateJS/components";
 import '../SlateJS/index.css';
 import initialValue from './initialValue';
@@ -37,14 +37,15 @@ const withRichText = editor => {
   const { exec, isInline, isVoid } = editor;
 
   editor.isInline = element => {
-    return element.type === 'link' ? true : isInline(element)
+    const inlineSet = new Set([]);
+
+    return inlineSet.has(element.type) || isInline(element)
   }
 
   editor.isVoid = element => {
-    return {
-      image: true,
-      video: true,
-    }[element.type] || isVoid(element)
+    const voidSet = new Set([]);
+
+    return voidSet.has(element.type) || isVoid(element)
   }
 
   editor.exec = command => {
@@ -165,7 +166,7 @@ export default () => {
   const [value, setValue] = useState(initialValue);
   const [selection, setSelection] = useState(null);
 
-  const renderElement = useCallback(props =>  <Element {...props} />, []);
+  const renderElement = useCallback(props => <Element {...props} />, []);
   const renderLeaf = useCallback(props => <Leaf {...props} />, []);
   const editor = useMemo(
     () => withTable(withRichText(withHistory(withReact(createEditor())))),
@@ -212,11 +213,12 @@ export default () => {
 };
 
 
+const ref = React.createRef();
+const TableRenderer = tableRenderer(ref);
 
 const Element = props => {
   const { attributes, children, element } = props
   console.log(element.type)
-  
 
   switch (element.type) {
     case "block-quote":
@@ -243,9 +245,9 @@ const Element = props => {
     case defaultOptions.typeRow:
     case defaultOptions.typeCell:
     case defaultOptions.typeContent:
-      console.log('😎')
-      const TableRenderer = tableRenderer(props);
-      return <TableRenderer />;
+      console.log('😎', props);
+      
+      return <TableRenderer {...props} />;
     default:
       return <p {...attributes}>{children}</p>;
   }

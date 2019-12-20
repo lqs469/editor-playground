@@ -1,3 +1,5 @@
+import { HistoryEditor } from 'slate-history';
+
 const insertStyleId = '__slate__table__id';
 
 const isBlock = (block) => {
@@ -6,7 +8,7 @@ const isBlock = (block) => {
 }
 
 export function removeSelection(editor) {
-  editor.withoutSaving(() => {
+  HistoryEditor.withoutSaving(editor, () => {
     const editors = document.querySelectorAll('[data-slate-editor]');
     Array.from(editors).forEach(e => {
       const tables = e.querySelectorAll('table');

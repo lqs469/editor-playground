@@ -2,35 +2,36 @@ export default [
   {
     type: "editable_table",
     data: {},
-    // children: [{ text: '我是标题🍉' }],
     children: [
         {
             "type": "editable_table_row",
             "children": [
                 {
-                    "type": "editable_table_cell",
-                    "children": [
+                    type: "editable_table_cell",
+                    key: '0',
+                    data: {
+                      "width": 100
+                    },
+                    children: [
                         {
                             type: "editable_table_content",
                             children: [
                                 {
-                                    text: "1"
+                                    text: "a1"
                                 }
                             ]
                         }
                     ],
-                    "data": {
-                        "width": 15
-                    }
                 },
                 {
                     "type": "editable_table_cell",
+                    key: '1',
                     "children": [
                         {
                             "type": "editable_table_content",
                             "children": [
                                 {
-                                    "text": "2"
+                                    "text": "a2"
                                 }
                             ]
                         }
@@ -47,12 +48,13 @@ export default [
             "children": [
                 {
                     "type": "editable_table_cell",
+                    key: '2',
                     "children": [
                         {
                             "type": "editable_table_content",
                             "children": [
                                 {
-                                    "text": "3"
+                                    "text": "a3"
                                 }
                             ]
                         }
@@ -63,18 +65,19 @@ export default [
                 },
                 {
                     "type": "editable_table_cell",
+                    key: '3',
                     "children": [
                         {
                             "type": "editable_table_content",
                             "children": [
                                 {
-                                    "text": "4"
+                                    "text": "a4"
                                 }
                             ]
                         }
                     ],
                     "data": {
-                        "width": 15
+                        "width": 150
                     }
                 }
             ],

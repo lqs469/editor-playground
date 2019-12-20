@@ -22,6 +22,87 @@ function buildTableLayout(nodes) {
   return { layout, keyDict };
 }
 
+export function createLayout(rows) {
+  const rowLength = rows.length;
+  const colLength = Math.max(
+    ...Array.from(rows).map(node => {
+      // if (!isBlock(node)) return 0;
+      return node.children.reduce((acc = 0, n) => {
+        // if (!isBlock(n)) return acc;
+        return acc + ((n.data && +n.data.colspan) || 1);
+      }, 0);
+    }),
+  );
+
+  const layout = [];
+  for (let row = 0, cellY = 0; row < rowLength; row++, cellY++) {
+    let nodeIndex = 0;
+    let cellX = 0;
+    for (let col = 0; col < colLength; col++) {
+      if (layout[row] && layout[row][col]) {
+        continue;
+      }
+      if (!layout[row]) {
+        layout[row] = [];
+      }
+      const rowBlock = rows[cellY];
+      // if (!isBlock(rowBlock)) continue;
+      const cell = rowBlock && rowBlock.children[nodeIndex];
+      const rowKey = rowBlock.key;
+      if (!cell) {
+        throw new Error('[slate-editable-table-plugin]: Should cell exist');
+      }
+      const key = cell.key;
+      const colspan = Number((cell && cell.data.colspan) || 1);
+      const rowspan = Number((cell && cell.data.rowspan) || 1);
+      
+      layout[row][col] = {
+        key,
+        row,
+        col,
+        colspan,
+        rowspan,
+        block: cell,
+        rowKey,
+        rowBlock,
+        nodeIndex,
+        isLeftOfMergedCell: cellX === 0,
+        isTopOfMergedCell: rowspan > 1,
+      };
+
+      if (rowspan > 1) {
+        for (let r = 0; r < rowspan - 1; r++) {
+          if (!layout[row + r + 1]) {
+            layout[row + r + 1] = [];
+          }
+          layout[row + r + 1][col] = {
+            key,
+            row: row + r + 1,
+            col,
+            colspan,
+            rowspan,
+            block: cell,
+            rowKey,
+            nodeIndex,
+            rowBlock: rowBlock,
+            isLeftOfMergedCell: cellX === 0,
+            isTopOfMergedCell: false,
+          };
+        }
+      }
+
+      if (cellX === colspan - 1) {
+        cellX = 0;
+        nodeIndex++;
+      } else {
+        cellX++;
+      }
+    }
+  }
+
+  return layout;
+}
+
 // Deprecated
 export class TableLayout {
   constructor(TableLayout, dict, table, row, cell) {
@@ -177,12 +258,18 @@ export class TableLayout {
 
   static create(editor, opts) {
     if (!editor) return null;
+    
     const table = findCurrentTable(editor, opts);
     if (!table) return null;
-    const nodes = table && ((table).getNode(table.key).nodes);
+
+    const nodes = table.children;
+
+    // const nodes = table && ((table).getNode(table.key).nodes);
     if (!nodes) return null;
+    
     const { layout, keyDict } = buildTableLayout(nodes);
 
+    debugger
     const currentCell = TableLayout.currentCell(editor, opts);
     const currentRow = TableLayout.currentRow(editor, opts);
     const currentTable = TableLayout.currentTable(editor, opts);
@@ -231,15 +318,19 @@ export class TableLayout {
       : false;
   }
 }
+
 export function findCurrentTable(editor, opts = defaultOptions) {
   if (!editor) return null;
-  const { value } = editor;
-  const { startBlock } = value;
-  if (!startBlock) return null;
-  const table = value.document.getClosest(startBlock.key, (p) => (p).type === opts.typeTable);
-  if (!table) return null;
-  if (!isBlock(table)) return null;
-  return table;
+
+  return editor.children.find(item => item.type === opts.typeTable);
+
+  // const { value } = editor;
+  // const { startBlock } = value;
+  // if (!startBlock) return null;
+  // const table = value.document.getClosest(startBlock.key, (p) => (p).type === opts.typeTable);
+  // if (!table) return null;
+  // if (!isBlock(table)) return null;
+  // return table;
 }
 
 export function findCurrentRow(editor, opts = defaultOptions) {
@@ -285,7 +376,9 @@ export function findAnchorCell(editor, opts) {
 
 export function findStartCell(editor, opts) {
   const { startBlock } = editor.value;
-  return startBlock.type === opts.typeCell ? startBlock : TableLayout.findBlock(editor, opts.typeCell);
+  return startBlock.type === opts.typeCell
+    ? startBlock
+    : TableLayout.findBlock(editor, opts.typeCell);
 }
 
 export function findClosestKey(el) {
@@ -299,30 +392,33 @@ export function findClosestKey(el) {
 }
 
 export function findCellBlockByElement(editor, el, opts = defaultOptions) {
-  const { value } = editor;
+  // const { value } = editor;
   const key = findClosestKey(el);
   if (typeof key === 'undefined' || key === null) {
     return null;
   }
-  const found = value.document.getClosest(key, p => {
-    if (!isBlock(p)) return false;
-    if (p.type === opts.typeRow) {
-      return true;
-    }
-    return p.type === opts.typeCell;
-  });
 
-  if (found.type === opts.typeCell) {
-    return found;
-  }
+  return key;
 
-  if (found.type === opts.typeRow) {
-    return found.nodes.find(cell => {
-      if (!isBlock(cell)) return false;
-      return cell.key === key;
-    });
-  }
-  return null;
+  // const found = value.document.getClosest(key, p => {
+  //   if (!isBlock(p)) return false;
+  //   if (p.type === opts.typeRow) {
+  //     return true;
+  //   }
+  //   return p.type === opts.typeCell;
+  // });
+
+  // if (found.type === opts.typeCell) {
+  //   return found;
+  // }
+
+  // if (found.type === opts.typeRow) {
+  //   return found.nodes.find(cell => {
+  //     if (!isBlock(cell)) return false;
+  //     return cell.key === key;
+  //   });
+  // }
+  // return null;
 }
 
 export function findLeftTopPosition(anchor, focus) {
@@ -401,83 +497,6 @@ export function collectSelectionBlocks(
       return newRow.length ? newRow : null;
     })
     .filter(notNull);
-}
-
-export function createLayout(rows) {
-  const rowLength = rows.size;
-  const colLength = Math.max(
-    ...Array.from(rows.toArray()).map(node => {
-      if (!isBlock(node)) return 0;
-      return node.nodes.reduce((acc = 0, n) => {
-        if (!isBlock(n)) return acc;
-        return acc + ((n.data && Number(n.data.get('colspan'))) || 1);
-      }, 0);
-    }),
-  );
-
-  const layout = [];
-  for (let row = 0, cellY = 0; row < rowLength; row++, cellY++) {
-    let nodeIndex = 0;
-    let cellX = 0;
-    for (let col = 0; col < colLength; col++) {
-      if (layout[row] && layout[row][col]) {
-        continue;
-      }
-      if (!layout[row]) {
-        layout[row] = [];
-      }
-      const rowBlock = rows.get(cellY);
-      if (!isBlock(rowBlock)) continue;
-      const cell = rowBlock && ((rowBlock).nodes.get(nodeIndex));
-      const rowKey = rowBlock.key;
-      if (!cell) {
-        throw new Error('[slate-editable-table-plugin]: Should cell exist');
-      }
-      const key = cell.key;
-      const colspan = Number((cell && cell.data.get('colspan')) || 1);
-      const rowspan = Number((cell && cell.data.get('rowspan')) || 1);
-      layout[row][col] = {
-        key,
-        row,
-        col,
-        colspan,
-        rowspan,
-        block: cell,
-        rowKey,
-        rowBlock,
-        nodeIndex,
-        isLeftOfMergedCell: cellX === 0,
-        isTopOfMergedCell: rowspan > 1,
-      };
-      if (rowspan > 1) {
-        for (let r = 0; r < rowspan - 1; r++) {
-          if (!layout[row + r + 1]) {
-            layout[row + r + 1] = [];
-          }
-          layout[row + r + 1][col] = {
-            key,
-            row: row + r + 1,
-            col,
-            colspan,
-            rowspan,
-            block: cell,
-            rowKey,
-            nodeIndex,
-            rowBlock: rowBlock,
-            isLeftOfMergedCell: cellX === 0,
-            isTopOfMergedCell: false,
-          };
-        }
-      }
-      if (cellX === colspan - 1) {
-        cellX = 0;
-        nodeIndex++;
-      } else {
-        cellX++;
-      }
-    }
-  }
-  return layout;
 }
 
 function notNull(item) {

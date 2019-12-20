@@ -5,7 +5,9 @@ export const defaultOptions = {
   typeContent: 'editable_table_content',
   selectionColor: '#B9D3FC',
   minimumCellWidth: 32,
-  cellStyle: { padding: '3px' },
+  cellStyle: {
+    padding: '3px',
+  },
   rowStyle: {},
   tableStyle: {},
   defaultColumnWidth: 15,

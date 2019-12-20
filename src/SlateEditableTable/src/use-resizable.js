@@ -4,6 +4,7 @@ const handlerSelector = '[data-resize-handle]';
 
 export const useResizableTable = (props) => {
   const ref = React.useRef(null);
+
   const createSize = () => {
     if (!ref.current) return;
     const table = ref.current;
@@ -26,6 +27,7 @@ export const useResizableTable = (props) => {
   }, [props.disableResizing]);
 
   React.useEffect(() => {
+    debugger
     if (!ref.current) return;
     const size = createSize();
     if (size) {
@@ -150,6 +152,7 @@ export const useResizableTable = (props) => {
       table.removeEventListener('mouseout', onTableMouseOut);
     };
   }, [props.disableResizing, ref.current]);
+
   return { ref, update };
 };
 

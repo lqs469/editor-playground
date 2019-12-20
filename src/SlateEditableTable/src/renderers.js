@@ -1,7 +1,9 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect, forwardRef } from 'react';
+import { Editor } from "slate";
 import {
   useEditor,
 } from "slate-react";
+import { HistoryEditor } from 'slate-history';
 import { ComponentStore } from './store';
 import { removeSelection, addSelectionStyle } from './selection';
 import { useResizableTable } from './use-resizable';
@@ -12,42 +14,44 @@ import * as table from './layout';
 
 
 
+// 表格组件
+const Table = memo(forwardRef((props, tableRef) => {
+  console.log('🍎[InnerTable][props, tableRef]', props);
 
-export const InnerTable = React.forwardRef((props, tableRef) => {
   const [disableResizing, forceUpdate] = React.useState(false);
   const maxWidth = typeof props.maxWidth === 'undefined' ? 'auto' : props.maxWidth + 'px';
-  const onInit = React.useCallback(
-    (values) => {
-      props.onInit(props.editor, values);
-    },
-    [props.editor],
-  );
+  
+  const editor = useEditor();
 
-  const onUpdate = React.useCallback(
-    (values) => {
-      props.onUpdate(props.editor, values);
-    },
-    [props.editor],
-  );
+  useEffect(() => {
+    debugger
+    if (!ref.current) {
+      ref.current = props.attributes && props.attributes.ref && props.attributes.ref.current;
+    }
+    update();
+  }, []);
 
-  const onResizeStop = React.useCallback(
-    (e, values) => {
-      props.editor.blur();
-      props.onResizeStop(props.editor, values);
-    },
-    [props.editor],
-  );
+  const onInit = useCallback((values) => {
+    debugger
+    props.onInit(editor, values);
+  }, [editor]);
 
-  const onResizeStart = React.useCallback(
-    (e) => {
-      e.stopPropagation();
-      props.editor.blur();
-      removeSelection(props.editor);
-      props.store.setAnchorCellBlock(null);
-      props.store.setFocusCellBlock(null);
-    },
-    [props.editor],
-  );
+  const onUpdate = useCallback((values) => {
+    props.onUpdate(editor, values);
+  }, [editor]);
+
+  const onResizeStop = useCallback((e, values) => {
+    editor.blur && editor.blur();
+    props.onResizeStop(editor, values);
+  }, [editor]);
+
+  const onResizeStart = useCallback((e) => {
+    e.stopPropagation();
+    editor.blur && editor.blur();
+    removeSelection(editor);
+    props.store.setAnchorCellBlock(null);
+    props.store.setFocusCellBlock(null);
+  }, [editor]);
 
   const { ref, update } = useResizableTable({
     disableResizing,
@@ -61,17 +65,10 @@ export const InnerTable = React.forwardRef((props, tableRef) => {
     onHandleHover: props.onHandleMouseOver,
   });
 
-  React.useEffect(() => {
-    props.store.subscribeDisableResizing(props.editor, v => {
+  useEffect(() => {
+    props.store.subscribeDisableResizing(editor, v => {
       forceUpdate(v);
     });
-  }, []);
-
-  React.useEffect(() => {
-    if (!ref.current) {
-      ref.current = props.attributes && props.attributes.ref && props.attributes.ref.current;
-    }
-    update();
   }, []);
 
   React.useImperativeHandle(tableRef, () => ({
@@ -80,7 +77,7 @@ export const InnerTable = React.forwardRef((props, tableRef) => {
     },
   }));
 
-  const onDragStart = React.useCallback((e) => {
+  const onDragStart = useCallback((e) => {
     e.preventDefault();
   }, []);
 
@@ -96,24 +93,19 @@ export const InnerTable = React.forwardRef((props, tableRef) => {
       style={{ ...props.style, ...tableStyle, maxWidth }}
       {...props.attributes}
       onDragStart={onDragStart}
+      type={props.type}
     >
       {props.children}
     </table>
   );
-});
-
-const Table = React.memo(InnerTable);
+}));
 
 
 
 
 
-const Content = memo(({ attributes, children }) => {
-  return (
-    <p style={{ margin: 0 }} {...attributes}>{children}</p>
-  );
-});
 
+// 表格单元
 const Cell = memo(props => {
   console.log('[🔥Cell props]:', props);
   const editor = useEditor()
@@ -161,6 +153,8 @@ const Cell = memo(props => {
 
   return (
     <td
+      data-key={props['data-key']}
+      type={props.type}
       {...props.attributes}
       onMouseDown={e => {
         if (!(e.target instanceof HTMLElement)) return;
@@ -182,40 +176,47 @@ const Cell = memo(props => {
         const focusCellBlock = table.findCellBlockByElement(props.editor, e.target, props.opts);
         if (!focusCellBlock) return;
         const prevFocusBlock = props.store.getFocusCellBlock();
-        if (focusCellBlock.key === (prevFocusBlock && prevFocusBlock.key)) return;
-        const t = table.TableLayout.create(props.editor, props.opts);
-        if (!t) {
-          removeSelection(props.editor);
-          props.store.setAnchorCellBlock(null);
-          props.store.setFocusCellBlock(null);
-          return;
-        }
-        props.store.setFocusCellBlock(focusCellBlock);
-        // HACK: Add ::selection style when greater than 1 cells selected.
-        addSelectionStyle();
-
-        const blocks = table.createSelectedBlockMap(props.editor, anchorCellBlock.key, focusCellBlock.key, props.opts);
         
-        props.editor.withoutSaving(() => {
-          t.table.forEach(row => {
-            row.forEach(cell => {
-              if (blocks[cell.key]) {
-                props.editor.setNodeByKey(cell.key, {
-                  type: cell.block.type,
-                  data: {
-                    ...cell.block.data.toObject(),
-                    selectionColor: props.opts.selectionColor,
-                  },
-                });
-              } else {
-                props.editor.setNodeByKey(cell.key, {
-                  type: cell.block.type,
-                  data: { ...cell.block.data.toObject(), selectionColor: null },
-                });
-              }
-            });
-          });
-        });
+        if (focusCellBlock === prevFocusBlock) return;
+        // if (focusCellBlock.key === (prevFocusBlock && prevFocusBlock.key)) return;
+        
+
+        // const t = table.TableLayout.create(props.editor, props.opts);
+        // if (!t) {
+        //   removeSelection(props.editor);
+        //   props.store.setAnchorCellBlock(null);
+        //   props.store.setFocusCellBlock(null);
+        //   return;
+        // }
+        // props.store.setFocusCellBlock(focusCellBlock);
+        // // HACK: Add ::selection style when greater than 1 cells selected.
+        // addSelectionStyle();
+
+        // const blocks = table.createSelectedBlockMap(props.editor, anchorCellBlock.key, focusCellBlock.key, props.opts);
+        
+        // HistoryEditor.withoutSaving(editor, () => {
+        //   t.table.forEach(row => {
+        //     row.forEach(cell => {
+        //       if (blocks[cell.key]) {
+        //         props.editor.setNodeByKey(cell.key, {
+        //           type: cell.block.type,
+        //           data: {
+        //             ...cell.block.data.toObject(),
+        //             selectionColor: props.opts.selectionColor,
+        //           },
+        //         });
+        //       } else {
+        //         props.editor.setNodeByKey(cell.key, {
+        //           type: cell.block.type,
+        //           data: {
+        //             ...cell.block.data.toObject(),
+        //             selectionColor: null,
+        //           },
+        //         });
+        //       }
+        //     });
+        //   });
+        // });
       }}
       colSpan={props.node.data.colspan}
       rowSpan={props.node.data.rowspan}
@@ -228,53 +229,94 @@ const Cell = memo(props => {
 
 
 
-function updateWidth(editor, value) {
+
+// 表格文本内容
+const Content = memo(({ attributes, children, type }) => {
+  return (
+    <p style={{ margin: 0 }} {...attributes} type={type}>{children}</p>
+  );
+});
+
+
+
+
+
+
+const updateWidth = (editor, value) => {
   Object.keys(value).forEach(k => {
-    const n = editor.value.document.getNode(k);
-    console.log('⛔️[updateWidth] -> [isBlock]', n);
+    if (editor.selection) {
+      const [block] = Editor.nodes(editor, { match: { key: k } })
+      // const n = editor.value.document.getNode(k);
+      
+      console.log('⛔️[updateWidth] -> [isBlock]', block);
+      debugger
+      if (!block || !block[0]) return;
+  
+      const contentValue = defaultOptions.cellStyle && defaultOptions.cellStyle.padding
+        ? value[k] - defaultOptions.cellStyle.padding * 2 - 1
+        : value[k]
+
+      const selectedType = block[0].type;
+      const selectedData = block[0].data
+      Editor.setNodes(editor, {
+        type: selectedType,
+        data: { ...selectedData, width: contentValue },
+      }, {
+        match: { key: k }
+      });
+    } else {
+      let { children = [] } = editor;
+
+      // BFS
+      let stack = [];
+    }
+
+
     // if (!isBlock(n)) return;
-    editor.setNodeByKey(k, {
-      type: n.type,
-      data: { ...n.data.toObject(), width: value[k] },
-    });
+    // editor.setNodeByKey(k, {
+    //   type: n.type,
+    //   data: { ...n.data.toObject(), width: value[k] },
+    // });
   });
 }
 
-export const tableRenderer = props => {
-  console.log('💡[tableRenderer]', props);
-  const { attributes, children, element } = props;
-  
-  const opts = defaultOptions;
+// Table 渲染工厂
+export const tableRenderer = (ref) => {
   const store = new ComponentStore();
+  const opts = defaultOptions;
   
-  return () => {
+  return (props) => {
+    const { attributes, children, element } = props;
+    console.log('💡[tableRenderer]', props, ref);
+    
     const editor = useEditor()
-
     switch (element.type) {
       case defaultOptions.typeTable: {
-        debugger
         return (
           <Table
-            // ref={ref}
+            ref={ref}
+            // type={element.type}
             editor={editor}
             store={store}
             onInit={updateWidth}
             onUpdate={updateWidth}
             onResizeStop={updateWidth}
-            maxWidth={children.props.node.data.maxWidth}
+            // maxWidth={null}
             minimumCellWidth={opts.minimumCellWidth}
             style={opts.tableStyle}
             attributes={attributes}
-          />
+          >
+            <tbody {...attributes}>{children}</tbody>
+          </Table>
         )
       }
       case defaultOptions.typeRow: {
-        debugger
         return (
           <tr
             {...attributes}
             style={defaultOptions.rowStyle}
             onDrag={e => e.preventDefault()}
+            type={element.type}
           >
             {children}
           </tr>
@@ -282,23 +324,30 @@ export const tableRenderer = props => {
       }
       
       case defaultOptions.typeCell: {
-        debugger
         return (
           <Cell
+            // type={element.type}
             editor={editor}
             store={store}
-            node={props.children.props.node}
+            node={children.props.node}
             attributes={attributes} 
             opts={opts}
+            data-key={element.key}
           >
-            {props.children}
+            {children}
           </Cell>
         );
       }
       
       case defaultOptions.typeContent: {
-        debugger
-        return <Content attributes={attributes}> {children}</Content>;
+        return (
+          <Content
+            // type={element.type}
+            attributes={attributes}
+          >
+            {children}
+          </Content>
+        );
       }
       
       default:
