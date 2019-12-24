@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, forwardRef } from 'react';
+import React, { memo, useState, useCallback, useEffect, forwardRef } from 'react';
 import { Editor } from "slate";
 import {
   useEditor,
@@ -60,8 +60,6 @@ const Table = forwardRef((props, tableRef) => {
     onHandleHover: props.onHandleMouseOver,
   });
 
-  
-
   // useEffect(() => {
   //   props.store.subscribeDisableResizing(editor, v => {
   //     forceUpdate(v);
@@ -74,34 +72,19 @@ const Table = forwardRef((props, tableRef) => {
   //   },
   // }));
 
-  // const onDragStart = useCallback((e) => {
-  //   e.preventDefault();
-  // }, []);
-
-  const [allowSelection, setAllowSelection] = React.useState(true);
-  const [prevSelection, setPrevSelection] = React.useState(null);
+  const [allowSelection, setAllowSelection] = useState(false);
 
   useEffect(() => {
-    if (
-      allowSelection
-      &&editor.selection
-      && prevSelection !== JSON.stringify(editor.selection)
-    ) {
-      console.log('💡', prevSelection, JSON.stringify(editor.selection));
-      setPrevSelection(JSON.stringify(editor.selection));
+    if (allowSelection) {
       addSelectionStyle(editor);
     }
   }, [editor.selection]);
 
   const onClearSelection = useCallback(e => {
-    console.log('🔥', e.target.attributes['slate-table-element']);
-    if (e.target.attributes['slate-table-element']) {
-      setAllowSelection(true);
-    } else {
-      removeSelection(props.editor);
-      setAllowSelection(false);
-    }
-  });
+    removeSelection(props.editor);
+    setAllowSelection(!!e.target.closest('*[slate-table-element]'));
+  }, []);
+
 
   useEffect(() => {
     window.addEventListener('mousedown', onClearSelection);
@@ -113,14 +96,11 @@ const Table = forwardRef((props, tableRef) => {
   return (
     <table
       ref={ref}
-      style={{
-        ...props.style,
-        maxWidth,
-      }}
-      // {...props.attributes}
-      // onDragStart={onDragStart}
-      // type={props.type}
+      style={{ ...props.style, maxWidth }}
+      onDragStart={e => e.preventDefault()}
       slate-table-element="table"
+      // {...props.attributes}
+      // type={props.type}
     >
       {props.children}
     </table>
@@ -158,8 +138,6 @@ const Cell = props => {
   //     window.removeEventListener('click', onWindowClick);
   //   };
   // }, [onMouseUp, onWindowClick]);
-
-  
 
   const tdStyles = {
     ...props.opts.cellStyle,
@@ -289,7 +267,7 @@ const updateWidth = (editor, value) => {
     });
   } else {
     function fn(node, handler) {
-      if (node.key) {
+      if (node.type === defaultOptions.typeCell) {
         handler(node);
         return [node];
       }
@@ -342,6 +320,7 @@ export const tableRenderer = (ref) => {
         return (
           <tr
             {...attributes}
+            data-key={element.key}
             style={defaultOptions.rowStyle}
             onDrag={e => e.preventDefault()}
             // type={element.type}
@@ -355,12 +334,12 @@ export const tableRenderer = (ref) => {
         return (
           <Cell
             // type={element.type}
+            data-key={element.key}
             editor={editor}
             store={store}
             node={children.props.node}
             attributes={attributes} 
             opts={opts}
-            data-key={element.key}
           >
             {children}
           </Cell>

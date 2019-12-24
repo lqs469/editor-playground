@@ -6,6 +6,7 @@ export function createCell(opts = defaultOptions, text = '') {
 
   return {
     type: typeCell,
+    key: `cell_${new Date().getTime()}`,
     children: [
       {
         type: typeContent,

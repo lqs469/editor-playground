@@ -5,10 +5,11 @@ export default [
     children: [
         {
             "type": "editable_table_row",
+            key: 'row_0',
             "children": [
                 {
                     type: "editable_table_cell",
-                    key: '0',
+                    key: 'cell_0',
                     data: {
                         "width": 200,
                         // rowspan: '2',
@@ -27,7 +28,7 @@ export default [
                 },
                 {
                     "type": "editable_table_cell",
-                    key: '1',
+                    key: 'cell_1',
                     "children": [
                         {
                             "type": "editable_table_content",
@@ -47,10 +48,11 @@ export default [
         },
         {
             "type": "editable_table_row",
+            key: 'row_1',
             "children": [
                 {
                     "type": "editable_table_cell",
-                    key: '2',
+                    key: 'cell_2',
                     "children": [
                         {
                             "type": "editable_table_content",
@@ -67,7 +69,7 @@ export default [
                 },
                 {
                     "type": "editable_table_cell",
-                    key: '3',
+                    key: 'cell_3',
                     "children": [
                         {
                             "type": "editable_table_content",

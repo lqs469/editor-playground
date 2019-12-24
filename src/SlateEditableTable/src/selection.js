@@ -9,16 +9,12 @@ const insertStyleId = '__slate__table__id';
 // }
 
 export function removeSelection(editor) {
-  console.log('🚗 removeSelectionStyle');
-
   Editor.unsetNodes(editor, 'selectionColor', {
-    match: {
-      type: "editable_table_cell",
-    },
+    at: {},
+    match: ([node]) => !!node.selectionColor,
   });
 
   // removeSelectionStyle();
-
   // HistoryEditor.withoutSaving(editor, () => {
   //   const editors = document.querySelectorAll('[data-slate-editor]');
   //   Array.from(editors).forEach(e => {
@@ -71,21 +67,16 @@ export function addSelectionStyle(editor) {
       const stylesheet = style.sheet;
       
       if (stylesheet) {
-        const _newStyle = stylesheet.insertRule(`table *::selection { background: none; }`, stylesheet.cssRules.length);
+        stylesheet.insertRule(`table *::selection { background: none; }`, stylesheet.cssRules.length);
       }
     }
   }
 
   const { selection } = editor;
   if (selection) {
-    // const [block] = Editor.nodes(editor, {
-    //   match: { type: "editable_table_cell" },
-    // });
-
     Editor.setNodes(editor, {
       selectionColor: 'rgb(185, 211, 252)',
     }, {
-      at: selection,
       match: { type: "editable_table_cell" },
     });
   }

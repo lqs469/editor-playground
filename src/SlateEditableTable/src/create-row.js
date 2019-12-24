@@ -9,7 +9,8 @@ export function createRow(opts, columns) {
 
   return {
     type: defaultOptions.typeRow,
-    children: cellNodes,
+    key: `row_${new Date().getTime()}`,
     data: {},
+    children: cellNodes,
   };
 }
