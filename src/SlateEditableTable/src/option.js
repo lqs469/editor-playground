@@ -9,6 +9,10 @@ export const defaultOptions = {
     padding: '3px',
   },
   rowStyle: {},
-  tableStyle: {},
+  tableStyle: {
+    borderSpacing: 0,
+    Layout: 'fixed',
+    wordBreak: 'break-word',
+  },
   defaultColumnWidth: 15,
 };

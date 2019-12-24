@@ -15,43 +15,14 @@ import * as table from './layout';
 
 
 // 表格组件
-const Table = memo(forwardRef((props, tableRef) => {
+const Table = forwardRef((props, tableRef) => {
   const [disableResizing, forceUpdate] = React.useState(false);
   const maxWidth = typeof props.maxWidth === 'undefined' ? 'auto' : props.maxWidth + 'px';
   const editor = useEditor();
 
-  const onInit = useCallback((values) => {
-    props.onInit(editor, values);
-  }, [editor]);
-
-  const onUpdate = useCallback((values) => {
-    props.onUpdate(editor, values);
-  }, [editor]);
-
-  const onResizeStop = useCallback((e, values) => {
-    editor.blur && editor.blur();
-    props.onResizeStop(editor, values);
-  }, [editor]);
-
-  const onResizeStart = useCallback((e) => {
-    e.stopPropagation();
-    editor.blur && editor.blur();
-    removeSelection(editor);
-    props.store.setAnchorCellBlock(null);
-    props.store.setFocusCellBlock(null);
-  }, [editor]);
-
-  const { ref, update } = useResizableTable({
-    disableResizing,
-    maxWidth: props.maxWidth,
-    minimumCellWidth: props.minimumCellWidth,
-    onResizeStart,
-    // onResize,
-    onResizeStop,
-    onInit,
-    onUpdate,
-    onHandleHover: props.onHandleMouseOver,
-  });
+  // const onInit = useCallback((values) => {
+  //   props.onInit(editor, values);
+  // }, [editor]);
 
   useEffect(() => {
     if (!ref.current) {
@@ -60,47 +31,101 @@ const Table = memo(forwardRef((props, tableRef) => {
     update();
   }, []);
 
-  useEffect(() => {
-    props.store.subscribeDisableResizing(editor, v => {
-      forceUpdate(v);
-    });
-  }, []);
+  const onUpdate = useCallback((values) => {
+    props.onUpdate(editor, values);
+  }, [editor]);
+
+  const onResizeStop = useCallback((e, values) => {
+    // editor.blur && editor.blur();
+    props.onResizeStop(editor, values);
+  }, [editor]);
+
+  const onResizeStart = useCallback((e) => {
+    e.stopPropagation();
+    // editor.blur && editor.blur();
+    removeSelection(editor);
+    // props.store.setAnchorCellBlock(null);
+    // props.store.setFocusCellBlock(null);
+  }, [editor]);
+
+  const { ref, update } = useResizableTable({
+    disableResizing,
+    maxWidth: props.maxWidth,
+    minimumCellWidth: props.minimumCellWidth,
+    onResizeStart,
+    onResizeStop,
+    // onResize,
+    // onInit,
+    onUpdate,
+    onHandleHover: props.onHandleMouseOver,
+  });
+
+  
+
+  // useEffect(() => {
+  //   props.store.subscribeDisableResizing(editor, v => {
+  //     forceUpdate(v);
+  //   });
+  // }, []);
+
+  // React.useImperativeHandle(tableRef, () => ({
+  //   update: () => {
+  //     update();
+  //   },
+  // }));
+
+  // const onDragStart = useCallback((e) => {
+  //   e.preventDefault();
+  // }, []);
+
+  const [allowSelection, setAllowSelection] = React.useState(true);
+  const [prevSelection, setPrevSelection] = React.useState(null);
 
   useEffect(() => {
-    const { selection } = editor;
-    if (selection) {
-      console.log('⭐️', selection.anchor, selection.focus);
+    if (
+      allowSelection
+      &&editor.selection
+      && prevSelection !== JSON.stringify(editor.selection)
+    ) {
+      console.log('💡', prevSelection, JSON.stringify(editor.selection));
+      setPrevSelection(JSON.stringify(editor.selection));
+      addSelectionStyle(editor);
+    }
+  }, [editor.selection]);
+
+  const onClearSelection = useCallback(e => {
+    console.log('🔥', e.target.attributes['slate-table-element']);
+    if (e.target.attributes['slate-table-element']) {
+      setAllowSelection(true);
+    } else {
+      removeSelection(props.editor);
+      setAllowSelection(false);
     }
   });
 
-  React.useImperativeHandle(tableRef, () => ({
-    update: () => {
-      update();
-    },
-  }));
-
-  const onDragStart = useCallback((e) => {
-    e.preventDefault();
-  }, []);
-
-  const tableStyle = {
-    borderSpacing: 0,
-    Layout: 'fixed',
-    wordBreak: 'break-word',
-  };
+  useEffect(() => {
+    window.addEventListener('mousedown', onClearSelection);
+    return () => {
+      window.removeEventListener('mousedown', onClearSelection);
+    }
+  }, [])
 
   return (
     <table
       ref={ref}
-      style={{ ...props.style, ...tableStyle, maxWidth }}
-      {...props.attributes}
-      onDragStart={onDragStart}
+      style={{
+        ...props.style,
+        maxWidth,
+      }}
+      // {...props.attributes}
+      // onDragStart={onDragStart}
       // type={props.type}
+      slate-table-element="table"
     >
       {props.children}
     </table>
   );
-}));
+});
 
 
 
@@ -108,48 +133,44 @@ const Table = memo(forwardRef((props, tableRef) => {
 
 
 // 表格单元
-const Cell = memo(props => {
+const Cell = props => {
   // const editor = useEditor()
 
-  const width = typeof props.node.data.width === 'undefined'
-    ? 'auto'
-    : `${props.node.data.width}px`;
+  // const onMouseUp = useCallback(e => {
+  //   props.store.clearCellSelecting(props.editor);
+  //   window.removeEventListener('mouseup', onMouseUp);
+  // }, []);
 
-  const style = props.node.data.style || {};
+  // const onWindowClick = useCallback(e => {
+  //     if (!table.findCurrentTable(props.editor, props.opts)) {
+  //       removeSelection(props.editor);
+  //       props.store.setAnchorCellBlock(null);
+  //       props.store.setFocusCellBlock(null);
+  //       window.removeEventListener('click', onWindowClick);
+  //     }
+  //   },
+  //   [props.editor, props.opts],
+  // );
 
-  const onMouseUp = useCallback(e => {
-    props.store.clearCellSelecting(props.editor);
-    window.removeEventListener('mouseup', onMouseUp);
-  }, []);
+  // React.useEffect(() => {
+  //   return () => {
+  //     window.removeEventListener('mouseup', onMouseUp);
+  //     window.removeEventListener('click', onWindowClick);
+  //   };
+  // }, [onMouseUp, onWindowClick]);
 
-  const onWindowClick = useCallback(e => {
-      if (!table.findCurrentTable(props.editor, props.opts)) {
-        removeSelection(props.editor);
-        props.store.setAnchorCellBlock(null);
-        props.store.setFocusCellBlock(null);
-        window.removeEventListener('click', onWindowClick);
-      }
-    },
-    [props.editor, props.opts],
-  );
-
-  React.useEffect(() => {
-    return () => {
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('click', onWindowClick);
-    };
-  }, [onMouseUp, onWindowClick]);
+  
 
   const tdStyles = {
     ...props.opts.cellStyle,
-    width,
     minWidth: `${props.opts.minimumCellWidth}px`,
+    width: `${props.node.data.width}px` || 'auto',
     verticalAlign: 'baseline',
-    ...style,
+    ...(props.node.data.style || {}),
   };
 
-  if (props.node.data.selectionColor) {
-    tdStyles.backgroundColor = props.node.data.selectionColor;
+  if (props.node.selectionColor) {
+    tdStyles.backgroundColor = props.node.selectionColor;
   }
 
   return (
@@ -158,27 +179,27 @@ const Cell = memo(props => {
       // type={props.type}
       {...props.attributes}
       onMouseDown={e => {
-        if (!(e.target instanceof HTMLElement)) return;
-        props.store.setAnchorCellBlock(null);
-        props.store.setFocusCellBlock(null);
-        removeSelection(props.editor);
-        props.store.setCellSelecting(props.editor);
-        const anchorCellBlock = table.findCellBlockByElement(props.editor, e.target, props.opts);
-        props.store.setAnchorCellBlock(anchorCellBlock);
-        window.addEventListener('mouseup', onMouseUp);
-        window.addEventListener('click', onWindowClick);
+        // if (!(e.target instanceof HTMLElement)) return;
+        // props.store.setAnchorCellBlock(null);
+        // props.store.setFocusCellBlock(null);
+        // removeSelection(props.editor);
+        // props.store.setCellSelecting(props.editor);
+        // const anchorCellBlock = table.findCellBlockByElement(props.editor, e.target, props.opts);
+        // props.store.setAnchorCellBlock(anchorCellBlock);
+        // window.addEventListener('mouseup', onMouseUp);
+        // window.addEventListener('click', onWindowClick);
       }}
       onMouseOver={e => {
-        e.stopPropagation();
-        const anchorCellBlock = props.store.getAnchorCellBlock();
-        if (anchorCellBlock === null) return;
-        if (!(e.target instanceof HTMLElement)) return;
-        if (!props.store.getCellSelecting()) return;
-        const focusCellBlock = table.findCellBlockByElement(props.editor, e.target, props.opts);
-        if (!focusCellBlock) return;
-        const prevFocusBlock = props.store.getFocusCellBlock();
+        // e.stopPropagation();
+        // const anchorCellBlock = props.store.getAnchorCellBlock();
+        // if (anchorCellBlock === null) return;
+        // if (!(e.target instanceof HTMLElement)) return;
+        // if (!props.store.getCellSelecting()) return;
+        // const focusCellBlock = table.findCellBlockByElement(props.editor, e.target, props.opts);
+        // if (!focusCellBlock) return;
+        // const prevFocusBlock = props.store.getFocusCellBlock();
         
-        if (focusCellBlock === prevFocusBlock) return;
+        // if (focusCellBlock === prevFocusBlock) return;
         // if (focusCellBlock.key === (prevFocusBlock && prevFocusBlock.key)) return;
         
 
@@ -191,7 +212,7 @@ const Cell = memo(props => {
         // }
         // props.store.setFocusCellBlock(focusCellBlock);
         // // HACK: Add ::selection style when greater than 1 cells selected.
-        // addSelectionStyle();
+        // addSelectionStyle(props.editor);
 
         // const blocks = table.createSelectedBlockMap(props.editor, anchorCellBlock.key, focusCellBlock.key, props.opts);
         
@@ -219,14 +240,16 @@ const Cell = memo(props => {
         //   });
         // });
       }}
+
       colSpan={props.node.data.colspan}
       rowSpan={props.node.data.rowspan}
       style={tdStyles}
+      slate-table-element="td"
     >
       {props.children}
     </td>
   );
-});
+};
 
 
 
@@ -234,7 +257,12 @@ const Cell = memo(props => {
 // 表格文本内容
 const Content = memo(({ attributes, children, type }) => {
   return (
-    <p style={{ margin: 0 }} {...attributes} type={type}>{children}</p>
+    <p
+      style={{ margin: 0 }}
+      {...attributes}
+      type={type}
+      slate-table-element="p"
+    >{children}</p>
   );
 });
 
@@ -244,6 +272,7 @@ const Content = memo(({ attributes, children, type }) => {
 
 
 const updateWidth = (editor, value) => {
+  console.log('[updateWidth]', editor, value);
   if (editor.selection) {
     Object.keys(value).forEach(k => {
       const [block] = Editor.nodes(editor, { match: { key: k } })
@@ -281,13 +310,13 @@ const updateWidth = (editor, value) => {
 
 // Table 渲染工厂
 export const tableRenderer = (ref) => {
+  console.log('渲染工厂');
   const store = new ComponentStore();
   const opts = defaultOptions;
   
   return (props) => {
     const { attributes, children, element } = props;
     const editor = useEditor()
-
 
     switch (element.type) {
       case defaultOptions.typeTable: {
@@ -305,7 +334,7 @@ export const tableRenderer = (ref) => {
             style={opts.tableStyle}
             attributes={attributes}
           >
-            <tbody>{children}</tbody>
+            <tbody slate-table-element="tbody">{children}</tbody>
           </Table>
         )
       }

@@ -218,7 +218,6 @@ const TableRenderer = tableRenderer(ref);
 
 const Element = props => {
   const { attributes, children, element } = props
-  console.log(element.type)
 
   switch (element.type) {
     case "block-quote":
