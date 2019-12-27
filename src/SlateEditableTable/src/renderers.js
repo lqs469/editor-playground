@@ -250,7 +250,6 @@ const Content = memo(({ attributes, children, type }) => {
 
 
 const updateWidth = (editor, value) => {
-  console.log('[updateWidth]', editor, value);
   if (editor.selection) {
     Object.keys(value).forEach(k => {
       const [block] = Editor.nodes(editor, { match: { key: k } })
@@ -267,6 +266,10 @@ const updateWidth = (editor, value) => {
     });
   } else {
     function fn(node, handler) {
+      if (node.type !== defaultOptions.typeTable) {
+        return;
+      }
+
       if (node.type === defaultOptions.typeCell) {
         handler(node);
         return [node];
